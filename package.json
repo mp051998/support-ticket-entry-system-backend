@@ -1,0 +1,37 @@
+{
+  "name": "support-ticket-entry-backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "tsc && node dist/app.js",
+    "lint": "eslint . --ext .ts",
+    "build": "tsc",
+    "start:pm2": "tsc && pm2 start dist/app.js --name support-ticket-entry-backend",
+    "stop:pm2": "pm2 stop support-ticket-entry-backend",
+    "status:pm2": "pm2 status support-ticket-entry-backend",
+    "restart:pm2": "pm2 restart support-ticket-entry-backend",
+    "delete:pm2": "pm2 delete support-ticket-entry-backend",
+    "logs:pm2": "pm2 logs support-ticket-entry-backend"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@hapi/joi": "^17.1.1",
+    "@types/cors": "^2.8.17",
+    "@typescript-eslint/eslint-plugin": "^6.19.0",
+    "@typescript-eslint/parser": "^6.19.0",
+    "eslint": "^8.56.0",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "@types/express": "^4.17.21",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.2",
+    "express": "^4.18.2",
+    "joi": "^17.12.0",
+    "mongodb": "^6.3.0",
+    "pm2": "^5.3.1"
+  }
+}
