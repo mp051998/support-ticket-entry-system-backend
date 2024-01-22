@@ -51,14 +51,16 @@ export class TicketsRoute {
   async getTickets(req: Request, res: Response) {
     let parsedStatus: string[] = [];
     let parsedSeverity: string[] = [];
+    let parsedTicketType: string[] = [];
     let parsedPage: number = 1;
     let parsedSize: number = 10;
 
     try {
       // Get the request arguments with default values
-      const { page = '1', size = '10', status = [], severity = []} = req.query;
+      const { page = '1', size = '10', status = [], severity = [], ticketType = []} = req.query;
       parsedStatus = (typeof status === 'string') && status.length > 0 ? status.split(',') : [];
       parsedSeverity = (typeof severity === 'string') && severity.length > 0 ? severity.split(',') : [];
+      parsedTicketType = (typeof ticketType === 'string') && ticketType.length > 0 ? ticketType.split(',') : [];
       parsedPage = parseInt(page.toString(), 10);
       parsedSize = parseInt(size.toString(), 10);
     } catch (error) {
@@ -68,13 +70,16 @@ export class TicketsRoute {
     try {
       // Logic to fetch all tickets from the database
       const ticketsModel = new TicketsModel();
-      const { data, count } = await ticketsModel.getTickets(parsedStatus, parsedSeverity, parsedPage, parsedSize);
+      const { data, count } = await ticketsModel.getTickets(parsedStatus, parsedSeverity, parsedTicketType, parsedPage, parsedSize);
 
       // Send back the tickets as the response
       const responseData = {
         meta: {
           page: parsedPage,
           size: parsedSize,
+          severity: parsedSeverity,
+          ticketType: parsedTicketType,
+          status: parsedStatus,
           count: count,
         },
         data: data,

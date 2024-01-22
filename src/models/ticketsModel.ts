@@ -37,8 +37,8 @@ export class TicketsModel extends Collection {
   }
 
   // Function to get all tickets paginated
-  async getTickets(status:string[]=[], severity:string[]=[], page:number=1, size:number=10) {
-    const query: { status?: { $in: string[] }, severity?: { $in: string[] } } = {};
+  async getTickets(status:string[]=[], severity:string[]=[], ticketType:string[]=[], page:number=1, size:number=10) {
+    const query: { status?: { $in: string[] }, severity?: { $in: string[] }, type?: { $in: string[]} } = {};
 
     // TODO: Check if using const will affect this functioning
     if (status.length > 0) {
@@ -46,6 +46,9 @@ export class TicketsModel extends Collection {
     }
     if (severity.length > 0) {
       query['severity'] = { $in: severity };
+    }
+    if (ticketType.length > 0) {
+      query['type'] = { $in: ticketType };
     }
 
     // Aggregation pipeline
