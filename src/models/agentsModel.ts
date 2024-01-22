@@ -1,16 +1,23 @@
 import { Collection } from "./collection";
+import { getTimestampInMs } from "../utils/tools";
 
 export class AgentsModel extends Collection {
   constructor() {
     super('agents');
   }
 
+  // Function to generate a new ID
+  async generateID() {
+    const count = await this.count({}) || 0;
+    return count + 1;
+  }
+
   // Function to get all the configs
-  async getAgentByID(id: string) {
+  async getAgentByID(id: number) {
     const query = {
       id: id
     };
-    const result = await this.findOne(query) || {};
+    const result = await this.findOne(query) || null;
     return result;
   }
 
@@ -30,6 +37,22 @@ export class AgentsModel extends Collection {
     const count = await this.count(query);
     const results = await this.findManyPaginated(query, {}, page, size);
     return { results, count };
+  }
+
+  // Function to create a new agent
+  async createAgent(name: string, email: string, phone: string, description: string) {
+    const query = {
+      id: await this.generateID(),
+      name: name,
+      email: email,
+      phone: phone,
+      description: description,
+      active: true,
+      createdAt: getTimestampInMs(),
+      updatedAt: getTimestampInMs(),
+    };
+    const result = await this.insertOne(query);
+    return result;
   }
 
 }

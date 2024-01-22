@@ -1,4 +1,7 @@
 import { Collection } from "./collection";
+import { Sort } from "mongodb";
+import { TicketStatus } from "../config/globals";
+import { getTimestampInMs } from "../utils/tools";
 
 export class TicketsModel extends Collection {
   constructor() {
@@ -11,11 +14,25 @@ export class TicketsModel extends Collection {
   }
 
   // Function to get all the configs
-  async getTicketByID(id: string) {
+  async getTicketByID(id:number) {
     const query = {
       id: id
     };
     const result = await this.findOne(query) || {};
+    return result;
+  }
+
+  // Function to get the latest ticket
+  async getLatestAutoAssignedTicket() {
+    const query = {
+      status: TicketStatus.assigned,
+      autoAssignedTo: { $ne: null }
+    };
+    const sort = {
+      createdAt: -1
+    } as Sort;
+    
+    const result = await this.findOne(query, sort) || {};
     return result;
   }
 
@@ -37,13 +54,16 @@ export class TicketsModel extends Collection {
   }
 
   // Function to create a new ticket
-  async createTicket(title: string, description: string, severity: string, ticketType: string) {
+  async createTicket(topic: string, description: string, severity: string, ticketType: string) {
     const query = {
       id: await this.generateID(),
-      title: title,
+      topic: topic,
       description: description,
       severity: severity,
       ticketType: ticketType,
+      status: TicketStatus.new,
+      createdAt: getTimestampInMs(),
+      updatedAt: getTimestampInMs()
     };
 
     const result = await this.insertOne(query);
@@ -51,6 +71,26 @@ export class TicketsModel extends Collection {
       return query;
     }
     return null;
+  }
+
+  // Function to assign a ticket to an agent
+  async updateAutoAssignedTicket(id:number, agentID:number) {
+    const query = {
+      id: id
+    };
+    const data = {
+      status: TicketStatus.assigned,
+      autoAssignedTo: agentID,
+      assignedTo: agentID,
+      assignedAt: getTimestampInMs(),
+      updatedAt: getTimestampInMs()
+    };
+
+    const result = await this.updateOne(query, { $set: data });
+    if (result) {
+      return true;
+    }
+    return false;
   }
 
 }

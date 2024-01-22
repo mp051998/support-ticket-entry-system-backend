@@ -1,4 +1,4 @@
-import { Db, Document, Filter, OptionalId, UpdateFilter } from 'mongodb'; // Import the Document type from the mongodb package
+import { Db, Document, Filter, OptionalId, Sort, UpdateFilter } from 'mongodb'; // Import the Document type from the mongodb package
 
 import { db as _db } from '../app';
 
@@ -35,17 +35,16 @@ export class Collection {
     return await this.db.collection(this.name).insertMany(data);
   }
 
-  async findOne(query: Filter<Document>, project: object | undefined = this.project) {
+  async findOne(query:Filter<Document>={}, sort:Sort={}, project: object | undefined = this.project) {
     await this.ensureCollectionExists();
-
+  
     const options = {
-      projection: project,
+      projection: project
     }
-    const result = await this.db.collection(this.name).findOne(query, options).then((response) => {
-      return response;
+    const result = await this.db.collection(this.name).find(query, options).sort(sort).limit(1).toArray().then((response) => {
+      return response[0];
     });
     return result;
-    
   }
 
   async findMany(query: Filter<Document>) {
@@ -63,7 +62,11 @@ export class Collection {
 
   async updateOne(query: Filter<Document>, data: UpdateFilter<Document> | Partial<Document>) {
     await this.ensureCollectionExists();
-    return await this.db.collection(this.name).updateOne(query, data);
+    const result = await this.db.collection(this.name).updateOne(query, data);
+    if (result.modifiedCount > 0) {
+      return true;
+    }
+    return false;
   }
 
   async deleteOne(query: Filter<Document> | undefined) {

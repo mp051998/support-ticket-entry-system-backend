@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 
+import { AgentsModel } from '../models/agentsModel';
 import { Express } from 'express';
+import { TicketAssignmentModule } from '../modules/assignments';
 import { TicketsModel } from '../models/ticketsModel';
 import { TicketsSchema } from '../utils/schemas/tickets';
 
@@ -19,9 +21,10 @@ export class TicketsRoute {
   }
 
   async getTicketByID(req: Request, res: Response) {
-    let id = '';
+    let id = null;
     try {
       ({ id } = req.params);
+      id = parseInt(id);
     } catch (error) {
       res.status(400).json({ error: `Error parsing request parameters: ${error}` });
     }
@@ -29,7 +32,7 @@ export class TicketsRoute {
     try {
       // Logic to fetch a single ticket from the database
       const ticketsModel = new TicketsModel();
-      const ticket = await ticketsModel.getTicketByID(id);
+      const ticket = await ticketsModel.getTicketByID(id as number);
 
       // Send back the ticket as the response
       const responseData = {
@@ -87,8 +90,7 @@ export class TicketsRoute {
       res.status(400).json({ error: error.details[0].message });
       return;
     }
-
-    // console.log("req", req );
+    
     console.log("req.body", req.body );
 
     const { topic, description, severity, ticketType } = req.body;
@@ -96,16 +98,20 @@ export class TicketsRoute {
     try {
       // Logic to create a ticket in the database
       const ticketsModel = new TicketsModel();
+      const agentsModel = new AgentsModel();
+
       const ticket = await ticketsModel.createTicket(topic, description, severity, ticketType);
       if (!ticket) {
         res.status(500).json({ error: "Error creating ticket" });
         return;
       }
 
-      // Sleep for 5 seconds
-      setTimeout(() => {
-        // Code to execute after 5 seconds
-      }, 5000);
+      // Auto assign the ticket if possible
+      const ticketAssignmentModule = new TicketAssignmentModule(ticketsModel, agentsModel)
+      await ticketAssignmentModule.autoAssignTicket(ticket.id);
+
+      // Fetch the ticket again to get the latest data
+      const updatedTicket = await ticketsModel.getTicketByID(ticket.id);
 
       // Send back the ticket as the response
       const responseData = {
@@ -115,10 +121,11 @@ export class TicketsRoute {
           severity: severity,
           ticketType: ticketType,
         },
-        data: ticket,
+        data: updatedTicket,
       }
       res.json(responseData);
     } catch (error) {
+      console.log("Error creating ticket: ", error);
       res.status(500).json({ error: error });
     }
   }

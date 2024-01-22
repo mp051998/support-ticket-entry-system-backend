@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 
+import { Agent } from '../interfaces/agent';
 import { AgentsModel } from '../models/agentsModel';
 import { Express } from 'express';
 
@@ -10,7 +11,9 @@ export class AgentsRoute {
   }
 
   registerRoutes(app: Express) {
-    app.get('/api/tickets/:id', this.getAgentByID);
+    app.get('/api/agents/:id', this.getAgentByID);
+    app.get('/api/agents', this.getAgents);
+    app.post('/api/agents', this.createAgent);
     
     console.log("Registered Agents route(s)");
   }
@@ -20,7 +23,7 @@ export class AgentsRoute {
 
     // Logic to fetch a single agent from the database
     const agentsModel = new AgentsModel();
-    const agent = await agentsModel.getAgentByID(id);
+    const agent = await agentsModel.getAgentByID(parseInt(id)) as unknown as Agent;
 
     // Send back the agent as the response
     const responseData = {
@@ -53,5 +56,15 @@ export class AgentsRoute {
       data: agents,
     }
     res.json(responseData);
+  }
+
+  async createAgent(req: Request, res: Response) {
+    const { name, email, phone, description } = req.body;
+
+    // Logic to create a new agent in the database
+    const agentsModel = new AgentsModel();
+    if (await agentsModel.createAgent(name, email, phone, description)) {
+      res.status(201).json({ message: 'Agent created successfully' });
+    }
   }
 }
