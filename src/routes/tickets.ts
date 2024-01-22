@@ -49,6 +49,7 @@ export class TicketsRoute {
   }
 
   async getTickets(req: Request, res: Response) {
+    let parsedQueryString: string = '';
     let parsedStatus: string[] = [];
     let parsedSeverity: string[] = [];
     let parsedTicketType: string[] = [];
@@ -57,7 +58,8 @@ export class TicketsRoute {
 
     try {
       // Get the request arguments with default values
-      const { page = '1', size = '10', status = [], severity = [], ticketType = []} = req.query;
+      const { queryString = '', page = '1', size = '10', status = [], severity = [], ticketType = []} = req.query;
+      parsedQueryString = queryString.toString();
       parsedStatus = (typeof status === 'string') && status.length > 0 ? status.split(',') : [];
       parsedSeverity = (typeof severity === 'string') && severity.length > 0 ? severity.split(',') : [];
       parsedTicketType = (typeof ticketType === 'string') && ticketType.length > 0 ? ticketType.split(',') : [];
@@ -70,13 +72,15 @@ export class TicketsRoute {
     try {
       // Logic to fetch all tickets from the database
       const ticketsModel = new TicketsModel();
-      const { data, count } = await ticketsModel.getTickets(parsedStatus, parsedSeverity, parsedTicketType, parsedPage, parsedSize);
+      const { data, count } = await ticketsModel.getTickets(parsedQueryString, 
+        parsedStatus, parsedSeverity, parsedTicketType, parsedPage, parsedSize);
 
       // Send back the tickets as the response
       const responseData = {
         meta: {
           page: parsedPage,
           size: parsedSize,
+          queryString: parsedQueryString,
           severity: parsedSeverity,
           ticketType: parsedTicketType,
           status: parsedStatus,
