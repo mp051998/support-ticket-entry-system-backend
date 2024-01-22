@@ -48,9 +48,94 @@ export class TicketsModel extends Collection {
       query['severity'] = { $in: severity };
     }
 
-    const count = await this.count(query);
-    const results = await this.findManyPaginated(query, {}, page, size);
-    return { results, count };
+    // Aggregation pipeline
+    const aggregationPipelineData = [{
+        $match: query
+      }, {
+        $skip: (page-1) * size
+      }, {
+        $limit: size
+      }, {
+        $lookup: {
+          from: 'agents',
+          localField: 'assignedTo',
+          foreignField: 'id',
+          as: 'assignedToAgentData'
+        }
+      }, {
+        $unwind: {
+          path: '$assignedToAgentData',
+          preserveNullAndEmptyArrays: true
+        }
+      }, {
+        $lookup: {
+          from: 'agents',
+          localField: 'autoAssignedTo',
+          foreignField: 'id',
+          as: 'autoAssignedToAgentData'
+        }
+      }, {
+        $unwind: {
+          path: '$autoAssignedToAgentData',
+          preserveNullAndEmptyArrays: true
+        }
+      }, {
+        $project: {
+          _id: 0,
+          id: 1,
+          topic: 1,
+          description: 1,
+          severity: 1,
+          type: 1,
+          status: 1,
+          autoAssignedTo: {
+            id: '$autoAssignedToAgentData.id',
+            name: '$autoAssignedToAgentData.name',
+          },
+          assignedTo: {
+            id: '$assignedToAgentData.id',
+            name: '$assignedToAgentData.name',
+          },
+          createdAt: 1,
+          updatedAt: 1,
+          assignedAt: 1,
+          autoAssignedAt: 1
+        }
+      }
+    ];
+
+    const aggregationPipelineCount = [{
+        $match: query
+      }, {
+        $count: 'count'
+      }
+    ];
+
+    const aggregationPipeline = [{
+        $facet: {
+          data: aggregationPipelineData,
+          count: aggregationPipelineCount
+        }
+      }, {
+        $project: {
+          data: 1,
+          count: {
+            $arrayElemAt: ['$count.count', 0]
+          }
+        }
+      }
+    ];
+
+    const results = await this.aggregate(aggregationPipeline);
+    console.log("Results in getTickets: ", results);
+
+    try {
+      const data = results[0].data;
+      const count = results[0].count;
+      return { data, count };
+    } catch {
+      return { data: [], count: 0 };
+    }
   }
 
   // Function to create a new ticket
@@ -60,7 +145,7 @@ export class TicketsModel extends Collection {
       topic: topic,
       description: description,
       severity: severity,
-      ticketType: ticketType,
+      type: ticketType,
       status: TicketStatus.new,
       createdAt: getTimestampInMs(),
       updatedAt: getTimestampInMs()

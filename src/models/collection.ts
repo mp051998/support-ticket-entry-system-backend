@@ -74,6 +74,11 @@ export class Collection {
     return await this.db.collection(this.name).deleteOne(query);
   }
 
+  async aggregate(pipeline: object[]) {
+    await this.ensureCollectionExists();
+    return await this.db.collection(this.name).aggregate(pipeline).toArray();
+  }
+
   private async ensureCollectionExists() {
     const collections = await this.db.collections();
     const collectionExists = collections.some((collection) => collection.collectionName === this.name);

@@ -68,15 +68,16 @@ export class TicketsRoute {
     try {
       // Logic to fetch all tickets from the database
       const ticketsModel = new TicketsModel();
-      const tickets = await ticketsModel.getTickets(parsedStatus, parsedSeverity, parsedPage, parsedSize);
+      const { data, count } = await ticketsModel.getTickets(parsedStatus, parsedSeverity, parsedPage, parsedSize);
 
       // Send back the tickets as the response
       const responseData = {
         meta: {
           page: parsedPage,
           size: parsedSize,
+          count: count,
         },
-        data: tickets,
+        data: data,
       }
       res.json(responseData);
     } catch (error) {

@@ -4,7 +4,7 @@ export interface Ticket {
   title: string;
   description: string;
   severity: string;
-  ticketType: string;
+  type: string;
   status: string;
   autoAssignedTo: number;
   autoAssignedAt: number;
