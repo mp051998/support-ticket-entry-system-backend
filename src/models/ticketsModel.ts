@@ -37,18 +37,33 @@ export class TicketsModel extends Collection {
   }
 
   // Function to get all tickets paginated
-  async getTickets(status:string[]=[], severity:string[]=[], ticketType:string[]=[], page:number=1, size:number=10) {
-    const query: { status?: { $in: string[] }, severity?: { $in: string[] }, type?: { $in: string[]} } = {};
+  async getTickets(queryString:string='', status:string[]=[], severity:string[]=[], ticketType:string[]=[], page:number=1, size:number=10) {
+    const query: { 
+      $or?: { 
+        topic?: RegExp
+        description?: RegExp
+      }[],
+      status?: { $in: string[] },
+      severity?: { $in: string[] },
+      type?: { $in: string[]}
+    } = {};
 
     // TODO: Check if using const will affect this functioning
     if (status.length > 0) {
-      query['status'] = { $in: status };
+      query.status = { $in: status };
     }
     if (severity.length > 0) {
-      query['severity'] = { $in: severity };
+      query.severity = { $in: severity };
     }
     if (ticketType.length > 0) {
-      query['type'] = { $in: ticketType };
+      query.type = { $in: ticketType };
+    }
+    if (queryString.length > 0) {
+      const regex = new RegExp(queryString, 'i');
+      query.$or = [
+        { topic: regex },
+        { description: regex}
+      ];
     }
 
     // Aggregation pipeline
